@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dante Portfolio Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#04060a;color:#f0f6ff;font-family:monospace;font-size:12px;padding:0;min-height:100vh}
+.header{padding:20px 20px 0;border-bottom:1px solid rgba(56,189,248,.08);background:linear-gradient(180deg,#060912 0%,#04060a 100%)}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.eyebrow{color:#38bdf8;font-size:9px;letter-spacing:.2em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.title{font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,#fff 30%,#38bdf8 70%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:10px;color:#4a5568;margin-top:4px}
+.last-updated{font-size:9px;color:#4a5568;text-align:right;margin-top:4px}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:16px 20px}
+.stat-card{background:#080c14;border:1px solid rgba(56,189,248,.1);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent)}
+.stat-lbl{font-size:9px;color:#4a5568;letter-spacing:.15em;margin-bottom:6px;text-transform:uppercase}
+.stat-val{font-weight:700;font-size:1rem;color:var(--accent)}
+.stat-pnl{font-size:11px;margin-top:4px;font-weight:600}
+.stat-pnl.up{color:#4ade80}
+.stat-pnl.down{color:#f87171}
+.stat-sub{font-size:10px;color:#94a3b8;margin-top:4px}
+.ccy-badge{font-size:8px;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;vertical-align:middle}
+.usd-b{background:rgba(56,189,248,.15);color:#38bdf8}
+.aud-b{background:rgba(167,139,250,.15);color:#a78bfa}
+
+/* CHART */
+.chart-section{padding:0 20px 16px}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.chart-title{font-size:10px;color:#4a5568;letter-spacing:.15em;text-transform:uppercase}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#94a3b8}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.legend-line{width:16px;height:2px;border-radius:1px}
+.chart-wrap{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:10px;padding:16px;position:relative;height:220px}
+.chart-note{font-size:9px;color:#4a5568;margin-top:8px;text-align:center;line-height:1.5}
+.scenario-tabs{display:flex;gap:6px;margin-bottom:10px}
+.scen-btn{background:#080c14;border:1px solid rgba(56,189,248,.15);border-radius:6px;padding:4px 12px;color:#4a5568;cursor:pointer;font-size:9px;font-family:monospace;transition:all .2s}
+.scen-btn.on{background:rgba(56,189,248,.1);color:#38bdf8;border-color:#38bdf8}
+
+/* TABS */
+.tabs-wrap{padding:0 20px}
+.tabs{display:flex;gap:0;background:#060810;border-bottom:1px solid rgba(56,189,248,.08);padding:12px 0 0;overflow-x:auto}
+.tab{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 14px;color:#4a5568;cursor:pointer;font-size:9px;letter-spacing:.1em;font-family:monospace;transition:all .2s;margin-bottom:-1px;white-space:nowrap}
+.tab.on{color:#38bdf8;border-bottom-color:#38bdf8}
+.tab:hover{color:#94a3b8}
+.panel{display:none;padding:16px 20px}
+.panel.on{display:block}
+
+/* HOLDINGS */
+.holding{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:8px;padding:10px;margin-bottom:6px;padding-left:14px;position:relative}
+.h-border{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.h-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.badge{font-size:8px;padding:2px 7px;border-radius:10px;font-weight:700}
+.hgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.hcell-lbl{font-size:8px;color:#4a5568}
+.edit-btn{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:5px;padding:2px 7px;color:#38bdf8;cursor:pointer;font-size:8px;font-family:monospace}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.edit-lbl{font-size:8px;color:#4a5568;margin-bottom:2px}
+.edit-inp{width:100%;background:#0d1420;border:1px solid rgba(56,189,248,.2);border-radius:4px;padding:4px 6px;color:#f0f6ff;font-family:monospace;font-size:11px}
+.alloc-bar{height:3px;border-radius:2px;margin-bottom:8px;overflow:hidden;background:rgba(255,255,255,.05)}
+.alloc-fill{height:100%;border-radius:2px}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.new-tag{font-size:7px;padding:1px 5px;border-radius:4px;background:rgba(74,222,128,.15);color:#4ade80;margin-left:4px}
+
+/* PIE */
+.pie-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.pie-canvas-wrap{position:relative;width:100%;max-width:260px;margin:0 auto}
+.dca-legend{display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto}
+.dca-leg-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.dca-leg-item:last-child{border-bottom:none}
+.dca-leg-left{display:flex;align-items:center;gap:6px}
+.dca-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dca-summary{background:#080c14;border:1px solid rgba(56,189,248,.1);border-radius:8px;padding:12px;margin-top:12px}
+.dca-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.dca-row:last-child{border-bottom:none}
+
+/* CRYPTO */
+.crypto-card{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:8px;padding:12px;margin-bottom:8px;padding-left:14px;position:relative}
+.t-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.t-box{background:#0d1420;border-radius:6px;padding:8px;text-align:center}
+.t-lbl{font-size:8px;margin-bottom:2px;font-weight:700}
+.t-price{font-size:11px;font-weight:700;color:#f0f6ff}
+.t-action{font-size:9px;color:#4ade80;margin-top:2px}
+
+/* TARGETS */
+.targets-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.target-card{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:8px;padding:12px}
+.trow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.trow:last-child{border-bottom:none}
+.prog-track{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-top:8px}
+.sig-card{background:#080c14;border-radius:8px;padding:10px;margin-bottom:6px;border:1px solid rgba(56,189,248,.06)}
+.sig-desc{font-size:10px;color:#94a3b8;line-height:1.6;margin-top:4px}
+.settings-card{background:#080c14;border:1px solid rgba(56,189,248,.1);border-radius:8px;padding:12px;margin-bottom:8px}
+.srow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.srow:last-child{border-bottom:none}
+.note{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:8px;padding:10px;font-size:10px;color:rgba(251,191,36,.7);line-height:1.7;margin-top:8px}
+.danger-note{background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.15);border-radius:8px;padding:10px;font-size:10px;color:rgba(248,113,113,.6);line-height:1.7;margin-top:8px}
+
+/* PROJECTION CARD */
+.proj-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.proj-card{background:#080c14;border:1px solid rgba(56,189,248,.1);border-radius:8px;padding:12px;text-align:center}
+.proj-label{font-size:9px;color:#4a5568;margin-bottom:6px;letter-spacing:.1em}
+.proj-val{font-weight:700;font-size:1rem}
+.proj-sub{font-size:9px;color:#4a5568;margin-top:4px}
+
+@media(max-width:600px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .hgrid{grid-template-columns:repeat(3,1fr)}
+  .pie-wrap{grid-template-columns:1fr}
+  .targets-grid{grid-template-columns:1fr}
+  .proj-cards{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="eyebrow"><span class="live-dot"></span> PORTFOLIO COMMAND CENTRE &middot; SUPERHERO AU</div>
+      <div class="title">DANTE'S PORTFOLIO</div>
+      <div class="subtitle">AI &middot; Quantum &middot; Energy &middot; Emerging Tech &middot; 5 Year Horizon &middot; <span style="color:#38bdf8">Stocks: USD</span> &middot; <span style="color:#a78bfa">Crypto: AUD</span></div>
+    </div>
+    <div class="last-updated" id="lastUpdated">--</div>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stats-row">
+  <div class="stat-card" style="--accent:#38bdf8">
+    <div class="stat-lbl">Stock + ETF Value <span class="ccy-badge usd-b">USD</span></div>
+    <div class="stat-val" id="stockVal">$--</div>
+    <div class="stat-pnl" id="stockPnl">--</div>
+    <div class="stat-sub" id="stockPct">--</div>
+  </div>
+  <div class="stat-card" style="--accent:#a78bfa">
+    <div class="stat-lbl">Crypto Wallet <span class="ccy-badge aud-b">AUD</span></div>
+    <div class="stat-val" id="cryptoVal">$--</div>
+    <div class="stat-sub">AAVE &middot; ENA &middot; APT &middot; ONDO &middot; PEAQ</div>
+    <div class="stat-pnl" style="color:#a78bfa;margin-top:6px;font-size:10px">2x &rarr; 3x &rarr; 4x targets to BTC</div>
+  </div>
+  <div class="stat-card" style="--accent:#fbbf24">
+    <div class="stat-lbl">Weekly DCA Target <span class="ccy-badge aud-b">AUD</span></div>
+    <div class="stat-val">$500</div>
+    <div class="stat-sub" style="margin-top:6px">~$26,000/yr &middot; ~$130,000 over 5yrs</div>
+    <div class="stat-pnl" style="color:#fbbf24;margin-top:4px;font-size:10px">Superhero AU &middot; High Risk &middot; 5yr</div>
+  </div>
+</div>
+
+<!-- 5-YEAR PROJECTION CHART -->
+<div class="chart-section">
+  <div class="chart-header">
+    <div>
+      <div class="chart-title">Stock + ETF Portfolio &mdash; Current Value &amp; 5-Year Projection (USD)</div>
+    </div>
+    <div class="scenario-tabs">
+      <button class="scen-btn on" onclick="setScenario('base',this)">Base Case</button>
+      <button class="scen-btn" onclick="setScenario('bull',this)">Bull Case</button>
+      <button class="scen-btn" onclick="setScenario('bear',this)">Bear Case</button>
+    </div>
+  </div>
+  <div class="chart-legend" style="margin-bottom:10px">
+    <div class="legend-item"><div style="width:16px;height:2px;background:#38bdf8;border-radius:1px;margin-right:2px"></div>Current + DCA Invested</div>
+    <div class="legend-item"><div style="width:16px;height:2px;background:#4ade80;border-radius:1px;margin-right:2px"></div>Projected Portfolio Value</div>
+    <div class="legend-item"><div style="width:16px;height:2px;background:rgba(251,191,36,.5);border-radius:1px;margin-right:2px;border-top:1px dashed #fbbf24"></div>Bull / Bear Range</div>
+  </div>
+  <div class="chart-wrap"><canvas id="projChart"></canvas></div>
+  <div class="proj-cards" id="projCards"></div>
+  <div class="chart-note">
+    Projection based on $500 AUD/wk DCA (~USD $320/wk at 0.64 rate) &middot; Base: weighted avg 80% annual return from research &middot; Bull: 150% &middot; Bear: 35%<br>
+    Based on analyst forecasts for AVGO (+100%), LITE (+200%), VST (+223%), MU (+440%), MSFT (+100%), CRWD (+80%), TSLA (+50%), others blended. Not financial advice.
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs"></div>
+</div>
+<div id="panel-holdings" class="panel on"></div>
+<div id="panel-dca" class="panel"></div>
+<div id="panel-signals" class="panel"></div>
+<div id="panel-crypto" class="panel"></div>
+<div id="panel-targets" class="panel"></div>
+<div id="panel-settings" class="panel"></div>
+
+<script>
+var H=[
+  {id:'MSFT',name:'Microsoft Corp',     type:'Stock',alloc:15,avgCost:379.3851,units:0.40592, lastPrice:411.22,color:'#38bdf8',av:'MS',ac:'rgba(56,189,248,.2)',isNew:false,thesis:'AI software and cloud',proj5y:1.00},
+  {id:'AVGO',name:'Broadcom Inc',        type:'Stock',alloc:12,avgCost:0,       units:0,      lastPrice:393.00,color:'#f97316',av:'BC',ac:'rgba(249,115,22,.2)',isNew:false,thesis:'Custom AI chips',proj5y:2.00},
+  {id:'QQQM',name:'Nasdaq 100 ETF',      type:'ETF',  alloc:12,avgCost:251.4209,units:1.09088,lastPrice:262.48,color:'#fbbf24',av:'QQ',ac:'rgba(251,191,36,.2)',isNew:false,thesis:'Nasdaq 100 exposure',proj5y:0.75},
+  {id:'TSLA',name:'Tesla Inc',           type:'Stock',alloc:10,avgCost:405.2045,units:0.1614, lastPrice:248.05,color:'#4ade80',av:'TS',ac:'rgba(74,222,128,.2)',isNew:false,thesis:'Robotics and EVs',proj5y:1.00},
+  {id:'MU',  name:'Micron Technology',   type:'Stock',alloc:9, avgCost:0,       units:0,      lastPrice:0,     color:'#818cf8',av:'MU',ac:'rgba(129,140,248,.2)',isNew:true, thesis:'AI memory and HBM chips',proj5y:4.40},
+  {id:'VST', name:'Vistra Corp',         type:'Stock',alloc:8, avgCost:0,       units:0,      lastPrice:155.00,color:'#22d3ee',av:'VS',ac:'rgba(34,211,238,.2)',isNew:false,thesis:'Nuclear AI energy',proj5y:2.23},
+  {id:'CRWD',name:'CrowdStrike',         type:'Stock',alloc:8, avgCost:350.00,  units:0,      lastPrice:403.00,color:'#a78bfa',av:'CS',ac:'rgba(167,139,250,.2)',isNew:false,thesis:'AI cybersecurity',proj5y:0.80},
+  {id:'LITE',name:'Lumentum Holdings',   type:'Stock',alloc:8, avgCost:0,       units:0,      lastPrice:893.00,color:'#67e8f9',av:'LT',ac:'rgba(103,232,249,.2)',isNew:false,thesis:'AI photonics and lasers',proj5y:2.00},
+  {id:'COPX',name:'Copper Mining ETF',   type:'ETF',  alloc:8, avgCost:0,       units:0,      lastPrice:0,     color:'#f59e0b',av:'CX',ac:'rgba(245,158,11,.2)',isNew:false,thesis:'Copper infrastructure',proj5y:0.60},
+  {id:'CORZ',name:'Core Scientific',     type:'Stock',alloc:6, avgCost:0,       units:0,      lastPrice:17.48, color:'#34d399',av:'CZ',ac:'rgba(52,211,153,.2)',isNew:true, thesis:'AI data centres',proj5y:1.46},
+  {id:'TTWO',name:'Take-Two Interactive',type:'Stock',alloc:5, avgCost:206.198, units:0.99613,lastPrice:214.15,color:'#f472b6',av:'TT',ac:'rgba(244,114,182,.2)',isNew:false,thesis:'GTA VI gaming catalyst',proj5y:1.00},
+  {id:'IONQ',name:'IonQ Inc',            type:'Stock',alloc:4, avgCost:0,       units:0,      lastPrice:0,     color:'#e879f9',av:'IQ',ac:'rgba(232,121,249,.2)',isNew:false,thesis:'Quantum computing',proj5y:2.50}
+];
+
+var A=[
+  {id:'AAVE',name:'Aave',  balance:2505.66,units:15.34,   color:'#8b5cf6'},
+  {id:'ENA', name:'Ethena',balance:2266.89,units:14137.48,color:'#10b981'},
+  {id:'APT', name:'Aptos', balance:1525.14,units:1084.12, color:'#f59e0b'},
+  {id:'ONDO',name:'Ondo',  balance:1121.45,units:2907.39, color:'#3b82f6'},
+  {id:'PEAQ',name:'Peaq',  balance:110.79, units:4735.94, color:'#ec4899'}
+];
+
+var TABS=['Holdings','DCA Plan','Signals','Crypto','Targets','Settings'];
+var PANELS=['holdings','dca','signals','crypto','targets','settings'];
+var editId=null;
+var holdings=H.map(function(h){return Object.assign({},h);});
+var pieChart=null;
+var projChartObj=null;
+var currentScenario='base';
+
+// AUD to USD rough rate
+var AUD_USD=0.64;
+var WEEKLY_AUD=500;
+var WEEKLY_USD=WEEKLY_AUD*AUD_USD; // ~$320 USD/wk
+
+function fmtUSD(n){return n?'$'+Math.abs(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}):'$--';}
+function fmtAUD(n){return n?'$'+Math.abs(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}):'$--';}
+function fmtK(n){return n>=1000000?'$'+(n/1000000).toFixed(2)+'M':n>=1000?'$'+(n/1000).toFixed(1)+'K':'$'+Math.round(n);}
+function fmtP(n){return(n>=0?'+':'')+n.toFixed(2)+'%';}
+function getPct(h){if(!h.avgCost||!h.lastPrice)return null;return((h.lastPrice-h.avgCost)/h.avgCost)*100;}
+function getSig(pct){
+  if(pct===null)return{label:'NO DATA',color:'#4a5568',bg:'rgba(148,163,184,.05)'};
+  if(pct<=-15)return{label:'LOAD UP',color:'#4ade80',bg:'rgba(74,222,128,.1)'};
+  if(pct>=50)return{label:'TAKE PROFIT',color:'#f87171',bg:'rgba(248,113,113,.1)'};
+  if(pct>=30)return{label:'WATCH',color:'#fbbf24',bg:'rgba(251,191,36,.1)'};
+  return{label:'HOLD',color:'#94a3b8',bg:'rgba(148,163,184,.08)'};
+}
+
+// Calculate weighted average 5-year return based on allocations
+function calcWeightedReturn(){
+  var total=holdings.reduce(function(s,h){return s+h.alloc;},0);
+  var weighted=holdings.reduce(function(s,h){return s+(h.proj5y*h.alloc/total);},0);
+  return weighted; // e.g. 1.8 means 180% gain over 5 years
+}
+
+// Build 5-year projection data
+function buildProjectionData(scenario){
+  var currentValue=holdings.reduce(function(s,h){return s+h.lastPrice*h.units;},0);
+  if(!currentValue)currentValue=800; // fallback if no positions entered
+
+  var baseReturn=calcWeightedReturn(); // weighted avg from research
+  // Annualise the 5y return to get CAGR
+  var baseCAGR=Math.pow(1+baseReturn,1/5)-1;
+  var bullCAGR=Math.pow(1+(baseReturn*1.5),1/5)-1;
+  var bearCAGR=Math.pow(1+(baseReturn*0.4),1/5)-1;
+
+  var scenCAGR=scenario==='bull'?bullCAGR:scenario==='bear'?bearCAGR:baseCAGR;
+
+  var labels=['Now'];
+  var invested=[currentValue];
+  var projected=[currentValue];
+  var bull=[currentValue];
+  var bear=[currentValue];
+
+  // Weekly contributions converted to monthly-ish (52 weeks / 12)
+  var weeklyUSD=WEEKLY_USD;
+
+  for(var q=1;q<=20;q++){ // 20 quarters = 5 years
+    var yr=q/4;
+    var m=Math.round(yr*12);
+    if(q%4===0)labels.push('Year '+(q/4));
+    else labels.push('Q'+q);
+
+    // Total invested including DCA (quarterly contributions)
+    var dcaQuarter=weeklyUSD*13; // 13 weeks per quarter
+    var totalInvested=currentValue+(q*dcaQuarter);
+    invested.push(totalInvested);
+
+    // Projected growth: compound existing + DCA contributions grow from when added
+    var proj=currentValue*Math.pow(1+scenCAGR,yr);
+    // Add DCA contributions with partial growth
+    for(var i=1;i<=q;i++){
+      var timeLeft=(q-i)/4;
+      proj+=dcaQuarter*Math.pow(1+scenCAGR,timeLeft);
+    }
+    projected.push(proj);
+
+    // Bull
+    var projB=currentValue*Math.pow(1+bullCAGR,yr);
+    for(var i=1;i<=q;i++){projB+=dcaQuarter*Math.pow(1+bullCAGR,(q-i)/4);}
+    bull.push(projB);
+
+    // Bear
+    var projBr=currentValue*Math.pow(1+bearCAGR,yr);
+    for(var i=1;i<=q;i++){projBr+=dcaQuarter*Math.pow(1+bearCAGR,(q-i)/4);}
+    bear.push(projBr);
+  }
+
+  return{labels:labels,invested:invested,projected:projected,bull:bull,bear:bear,
+    finalProjected:projected[projected.length-1],
+    finalBull:bull[bull.length-1],
+    finalBear:bear[bear.length-1],
+    totalInvested:invested[invested.length-1],
+    currentValue:currentValue
+  };
+}
+
+function setScenario(s,btn){
+  currentScenario=s;
+  document.querySelectorAll('.scen-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  buildProjChart(s);
+}
+
+function buildProjChart(scenario){
+  scenario=scenario||currentScenario;
+  var ctx=document.getElementById('projChart').getContext('2d');
+  if(projChartObj)projChartObj.destroy();
+  var d=buildProjectionData(scenario);
+
+  projChartObj=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:d.labels,
+      datasets:[
+        {
+          label:'Total Invested (USD)',
+          data:d.invested,
+          borderColor:'rgba(56,189,248,.6)',
+          backgroundColor:'rgba(56,189,248,.04)',
+          borderWidth:1.5,
+          borderDash:[4,4],
+          pointRadius:0,
+          pointHoverRadius:4,
+          tension:.3,
+          fill:false
+        },
+        {
+          label:'Projected Value (USD)',
+          data:d.projected,
+          borderColor:'#4ade80',
+          backgroundColor:'rgba(74,222,128,.06)',
+          borderWidth:2.5,
+          pointRadius:0,
+          pointHoverRadius:5,
+          tension:.4,
+          fill:true
+        },
+        {
+          label:'Bull Case',
+          data:d.bull,
+          borderColor:'rgba(251,191,36,.4)',
+          backgroundColor:'transparent',
+          borderWidth:1,
+          borderDash:[3,3],
+          pointRadius:0,
+          tension:.4,
+          fill:false
+        },
+        {
+          label:'Bear Case',
+          data:d.bear,
+          borderColor:'rgba(248,113,113,.4)',
+          backgroundColor:'transparent',
+          borderWidth:1,
+          borderDash:[3,3],
+          pointRadius:0,
+          tension:.4,
+          fill:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0d1420',borderColor:'rgba(56,189,248,.2)',borderWidth:1,
+          titleColor:'#94a3b8',bodyColor:'#f0f6ff',padding:10,
+          callbacks:{
+            label:function(c){
+              return ' '+c.dataset.label+': '+fmtK(c.parsed.y)+' USD';
+            }
+          }
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4a5568',font:{size:8},maxTicksLimit:6}},
+        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4a5568',font:{size:8},callback:function(v){return fmtK(v);}}}
+      }
+    }
+  });
+
+  // Update projection cards
+  var multiplier=(d.finalProjected/d.totalInvested);
+  var pctGain=((d.finalProjected-d.totalInvested)/d.totalInvested*100).toFixed(0);
+  document.getElementById('projCards').innerHTML=
+    '<div class="proj-card"><div class="proj-label">TOTAL INVESTED (5YR)</div><div class="proj-val" style="color:#38bdf8">'+fmtK(d.totalInvested)+' <span style="font-size:9px">USD</span></div><div class="proj-sub">Current + $500 AUD/wk DCA</div></div>'+
+    '<div class="proj-card"><div class="proj-label">PROJECTED VALUE (5YR)</div><div class="proj-val" style="color:#4ade80">'+fmtK(d.finalProjected)+' <span style="font-size:9px">USD</span></div><div class="proj-sub">+'+pctGain+'% &middot; '+multiplier.toFixed(1)+'x return</div></div>'+
+    '<div class="proj-card"><div class="proj-label">BULL / BEAR RANGE</div><div class="proj-val" style="color:#fbbf24">'+fmtK(d.finalBear)+' &mdash; '+fmtK(d.finalBull)+'</div><div class="proj-sub">Based on research forecasts</div></div>';
+}
+
+function renderStats(){
+  var tv=holdings.reduce(function(s,h){return s+h.lastPrice*h.units;},0);
+  var tc=holdings.reduce(function(s,h){return s+h.avgCost*h.units;},0);
+  var pnl=tv-tc;
+  var pct=tc?(pnl/tc)*100:0;
+  var at=A.reduce(function(s,a){return s+a.balance;},0);
+  document.getElementById('stockVal').textContent=tv?fmtUSD(tv)+' USD':'$-- USD';
+  var sp=document.getElementById('stockPnl');
+  sp.textContent=tc?(pnl>=0?'+':'')+fmtUSD(pnl)+' USD':'Add positions to track P&L';
+  sp.className='stat-pnl '+(pnl>0?'up':pnl<0?'down':'');
+  document.getElementById('stockPct').textContent=tc?fmtP(pct)+' vs avg cost':'Enter holdings to calculate';
+  document.getElementById('cryptoVal').textContent=fmtAUD(at)+' AUD';
+  document.getElementById('lastUpdated').textContent='Updated '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+}
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML=TABS.map(function(t,i){
+    var active=document.getElementById('panel-'+PANELS[i]).classList.contains('on');
+    return '<button class="tab'+(active?' on':'')+'" onclick="switchTab(\''+PANELS[i]+'\')">'+t.toUpperCase()+'</button>';
+  }).join('');
+}
+
+function switchTab(name){
+  PANELS.forEach(function(p){document.getElementById('panel-'+p).classList.remove('on');});
+  document.getElementById('panel-'+name).classList.add('on');
+  renderTabs();
+  if(name==='dca')setTimeout(buildPieChart,50);
+}
+
+function av(h,size){
+  size=size||26;
+  return '<div class="avatar" style="background:'+h.ac+';color:'+h.color+';width:'+size+'px;height:'+size+'px;font-size:'+(size*0.32).toFixed(0)+'px">'+h.av+'</div>';
+}
+
+function renderHoldings(){
+  var html='<div style="font-size:9px;color:#4a5568;margin-bottom:10px;letter-spacing:.1em">ALL PRICES IN USD &middot; EDIT POSITIONS TO TRACK P&amp;L</div>';
+  holdings.forEach(function(h){
+    var pct=getPct(h);
+    var sig=getSig(pct);
+    var isEditing=editId===h.id;
+    var value=h.lastPrice*h.units;
+    var hasPos=h.units>0&&h.avgCost>0;
+    var pnlColor=pct!==null?(pct>0?'#4ade80':pct<0?'#f87171':'#94a3b8'):'#4a5568';
+    var proj5yGain=((h.proj5y)*100).toFixed(0);
+    html+='<div class="holding">'+
+      '<div class="h-border" style="background:'+h.color+'"></div>'+
+      '<div class="h-top">'+
+        '<div style="display:flex;align-items:center;gap:8px">'+av(h)+
+          '<div>'+
+            '<span style="font-weight:700;font-size:.9rem">'+h.id+'</span>'+
+            (h.isNew?'<span class="new-tag">NEW</span>':'')+
+            '<span style="color:#4a5568;font-size:10px;margin-left:6px">'+h.name+'</span>'+
+            '<span style="margin-left:6px;font-size:8px;padding:2px 6px;border-radius:10px;background:'+(h.type==='ETF'?'rgba(251,191,36,.1)':'rgba(56,189,248,.1)')+';color:'+(h.type==='ETF'?'#fbbf24':'#38bdf8')+'">'+h.type+'</span>'+
+            '<span class="ccy-badge usd-b">USD</span>'+
+            (hasPos?'<span style="margin-left:4px;font-size:8px;padding:2px 6px;border-radius:10px;background:rgba(74,222,128,.08);color:#4ade80">ACTIVE</span>':'')+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;align-items:center">'+
+          '<span style="font-size:8px;color:#4ade80;background:rgba(74,222,128,.08);padding:2px 6px;border-radius:4px">+'+proj5yGain+'% 5yr</span>'+
+          '<span class="badge" style="background:'+sig.bg+';color:'+sig.color+'">'+sig.label+'</span>'+
+          '<button class="edit-btn" onclick="toggleEdit(\''+h.id+'\')">'+( isEditing?'SAVE':'EDIT')+'</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:9px;color:#4a5568;margin-bottom:6px">'+h.thesis+'</div>'+
+      '<div class="alloc-bar"><div class="alloc-fill" style="width:'+(h.alloc/15*100).toFixed(0)+'%;background:'+h.color+'"></div></div>';
+    if(isEditing){
+      html+='<div class="edit-grid">'+
+        '<div><div class="edit-lbl">AVG COST (USD)</div><input class="edit-inp" type="number" id="ec-'+h.id+'" value="'+(h.avgCost||'')+'"></div>'+
+        '<div><div class="edit-lbl">UNITS</div><input class="edit-inp" type="number" id="eu-'+h.id+'" value="'+(h.units||'')+'"></div>'+
+        '<div><div class="edit-lbl">LAST PRICE (USD)</div><input class="edit-inp" type="number" id="ep-'+h.id+'" value="'+(h.lastPrice||'')+'"></div>'+
+      '</div>';
+    } else {
+      html+='<div class="hgrid">'+
+        '<div><div class="hcell-lbl">ALLOC</div><div style="color:'+h.color+'">'+h.alloc+'%</div></div>'+
+        '<div><div class="hcell-lbl">UNITS</div><div>'+(h.units?h.units.toFixed(5):'--')+'</div></div>'+
+        '<div><div class="hcell-lbl">AVG USD</div><div>'+(h.avgCost?'$'+h.avgCost.toFixed(2):'--')+'</div></div>'+
+        '<div><div class="hcell-lbl">VALUE USD</div><div>'+(value?fmtUSD(value):'--')+'</div></div>'+
+        '<div><div class="hcell-lbl">P&amp;L</div><div style="color:'+pnlColor+'">'+(pct!==null?fmtP(pct):'--')+'</div></div>'+
+      '</div>';
+    }
+    html+='</div>';
+  });
+  document.getElementById('panel-holdings').innerHTML=html;
+}
+
+function buildPieChart(){
+  var el=document.getElementById('pieCanvas');
+  if(!el)return;
+  if(pieChart)pieChart.destroy();
+  pieChart=new Chart(el.getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:holdings.map(function(h){return h.id;}),
+      datasets:[{
+        data:holdings.map(function(h){return h.alloc;}),
+        backgroundColor:holdings.map(function(h){return h.color+'bb';}),
+        borderColor:holdings.map(function(h){return h.color;}),
+        borderWidth:1,
+        hoverOffset:20
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,cutout:'58%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0d1420',borderColor:'rgba(56,189,248,.2)',borderWidth:1,
+          titleColor:'#f0f6ff',bodyColor:'#94a3b8',padding:10,
+          callbacks:{
+            title:function(c){return c[0].label+' - '+holdings[c[0].dataIndex].name;},
+            label:function(c){
+              var h=holdings[c.dataIndex];
+              return[' AUD $'+(h.alloc/100*WEEKLY_AUD).toFixed(0)+'/wk',' Allocation: '+h.alloc+'%',' '+h.thesis];
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDCA(){
+  var legendHtml='';
+  holdings.forEach(function(h){
+    legendHtml+='<div class="dca-leg-item">'+
+      '<div class="dca-leg-left">'+
+        '<div class="dca-leg-dot" style="background:'+h.color+'"></div>'+
+        '<span style="font-weight:700;min-width:42px;font-size:11px">'+h.id+'</span>'+
+        '<span style="color:#4a5568;font-size:9px">'+h.thesis.split(' ')[0]+'</span>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div style="color:'+h.color+';font-weight:700;font-size:11px">$'+(h.alloc/100*WEEKLY_AUD).toFixed(0)+'/wk</div>'+
+        '<div style="color:#4a5568;font-size:9px">'+h.alloc+'% &middot; AUD</div>'+
+      '</div>'+
+    '</div>';
+  });
+  var html='<div class="pie-wrap">'+
+    '<div class="pie-canvas-wrap"><canvas id="pieCanvas" style="max-height:280px"></canvas></div>'+
+    '<div class="dca-legend">'+legendHtml+'</div>'+
+  '</div>'+
+  '<div class="dca-summary">'+
+    '<div class="dca-row"><span style="color:#4a5568">Weekly DCA Budget</span><span style="color:#fbbf24;font-weight:700">AUD $500</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">USD Equivalent (~0.64)</span><span style="color:#38bdf8">USD ~$320/wk</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">Annual Deployment</span><span>AUD ~$26,000</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">5yr Total Deployed</span><span>AUD ~$130,000</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">ETF Allocation</span><span style="color:#fbbf24">20%</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">Stock Allocation</span><span style="color:#38bdf8">80%</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">Platform</span><span>Superhero AU</span></div>'+
+    '<div class="dca-row"><span style="color:#4a5568">Horizon</span><span style="color:#4ade80">5 Years</span></div>'+
+  '</div>'+
+  '<div class="note">Hover over pie segments for AUD weekly amounts. DCA every single week regardless of market conditions. Red weeks are your best buying opportunities.</div>';
+  document.getElementById('panel-dca').innerHTML=html;
+  setTimeout(buildPieChart,50);
+}
+
+function renderSignals(){
+  var sorted=holdings.slice().sort(function(a,b){
+    var o={'TAKE PROFIT':0,'LOAD UP':1,'WATCH':2,'HOLD':3,'NO DATA':4};
+    return o[getSig(getPct(a)).label]-o[getSig(getPct(b)).label];
+  });
+  var html='<div style="font-size:9px;color:#4a5568;margin-bottom:10px;letter-spacing:.1em">ALL SIGNALS BASED ON USD PRICES</div>';
+  sorted.forEach(function(h){
+    var pct=getPct(h);
+    var sig=getSig(pct);
+    var desc='Continue DCA as planned.';
+    if(pct===null)desc='Enter avg cost (USD) and current price to activate signal.';
+    else if(pct<=-15)desc='Down '+Math.abs(pct).toFixed(1)+'% from avg USD cost — increase DCA allocation this week.';
+    else if(pct>=50)desc='Up '+pct.toFixed(1)+'% — consider taking 25% off the table.';
+    else if(pct>=30)desc='Up '+pct.toFixed(1)+'% — approaching profit target. Monitor closely.';
+    else desc='Within normal range '+fmtP(pct)+'. Continue DCA as planned.';
+    html+='<div class="sig-card" style="border-left:3px solid '+sig.color+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div style="display:flex;align-items:center;gap:8px">'+av(h,22)+
+          '<div><span style="font-weight:700">'+h.id+(h.isNew?'<span class="new-tag">NEW</span>':'')+'</span><span style="color:#4a5568;font-size:9px;margin-left:4px">'+h.thesis+'</span></div>'+
+        '</div>'+
+        '<span class="badge" style="background:'+sig.bg+';color:'+sig.color+'">'+sig.label+'</span>'+
+      '</div>'+
+      '<div class="sig-desc">'+desc+'</div>'+
+    '</div>';
+  });
+  html+='<div class="note">Signals based on USD avg cost vs current USD price. Not financial advice.</div>';
+  document.getElementById('panel-signals').innerHTML=html;
+}
+
+function renderCrypto(){
+  var at=A.reduce(function(s,a){return s+a.balance;},0);
+  var html='<div style="font-size:9px;color:#4a5568;margin-bottom:10px;letter-spacing:.1em">ALL CRYPTO VALUES IN AUD</div>'+
+    '<div style="background:#080c14;border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:12px;margin-bottom:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+        '<span style="color:#a78bfa;font-size:10px;letter-spacing:.1em">TOTAL WALLET AUD</span>'+
+        '<span style="color:#a78bfa;font-weight:700;font-size:1.1rem">'+fmtAUD(at)+'</span>'+
+      '</div>'+
+      '<div style="font-size:10px;color:#4a5568;line-height:1.6">Strategy: Take 25% at 2x, 3x, 4x then consolidate into Bitcoin. Hold final 25% as moonshot.</div>'+
+    '</div>';
+  A.forEach(function(a){
+    var price=a.balance/a.units;
+    var btc25=fmtAUD(a.balance*0.25);
+    html+='<div class="crypto-card" style="border-left:3px solid '+a.color+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+        '<div><span style="font-weight:700;font-size:.9rem">'+a.id+'</span><span style="color:#4a5568;font-size:10px;margin-left:6px">'+a.name+'</span><span class="ccy-badge aud-b">AUD</span></div>'+
+        '<div style="text-align:right"><div style="color:'+a.color+';font-weight:700">'+fmtAUD(a.balance)+'</div><div style="color:#4a5568;font-size:9px">'+a.units.toLocaleString()+' units</div></div>'+
+      '</div>'+
+      '<div class="t-grid">'+
+        '<div class="t-box"><div class="t-lbl" style="color:#4ade80">2x</div><div class="t-price">$'+(price*2).toFixed(4)+'</div><div class="t-action">Sell 25% = '+btc25+' AUD</div></div>'+
+        '<div class="t-box"><div class="t-lbl" style="color:#4ade80">3x</div><div class="t-price">$'+(price*3).toFixed(4)+'</div><div class="t-action">Sell 25% = '+btc25+' AUD</div></div>'+
+        '<div class="t-box"><div class="t-lbl" style="color:#4ade80">4x</div><div class="t-price">$'+(price*4).toFixed(4)+'</div><div class="t-action">Sell 25% = '+btc25+' AUD</div></div>'+
+        '<div class="t-box"><div class="t-lbl" style="color:#fbbf24">10x MOON</div><div class="t-price">$'+(price*10).toFixed(4)+'</div><div class="t-action">Hold final 25%</div></div>'+
+      '</div>'+
+    '</div>';
+  });
+  html+='<div style="background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:8px;padding:10px;font-size:10px;color:rgba(167,139,250,.7);line-height:1.7;margin-top:8px">Cost basis reset due to exchange migration. All AUD targets from current prices. Convert profits to BTC at each target.</div>';
+  document.getElementById('panel-crypto').innerHTML=html;
+}
+
+function renderTargets(){
+  var html='<div style="font-size:9px;color:#4a5568;margin-bottom:10px;letter-spacing:.1em">ALL TARGETS IN USD</div><div class="targets-grid">';
+  holdings.forEach(function(h){
+    var t1=h.avgCost*1.5,t2=h.avgCost*2,t3=h.avgCost*3;
+    var prog=h.avgCost&&h.lastPrice&&t1>h.avgCost?Math.min(100,((h.lastPrice-h.avgCost)/(t1-h.avgCost))*100):0;
+    html+='<div class="target-card">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+av(h,22)+
+        '<span style="font-weight:700;color:'+h.color+'">'+h.id+'</span>'+
+        (h.isNew?'<span class="new-tag">NEW</span>':'')+
+        '<span style="color:#4a5568;font-size:9px">'+h.alloc+'% &middot; USD</span>'+
+      '</div>'+
+      '<div style="font-size:9px;color:#4a5568;margin-bottom:8px">'+h.thesis+'</div>'+
+      '<div class="trow"><span style="color:#4a5568">Avg Cost</span><span>'+(h.avgCost?'USD $'+h.avgCost.toFixed(2):'--')+'</span></div>'+
+      '<div class="trow"><span style="color:#4a5568">Current</span><span>'+(h.lastPrice?'USD $'+h.lastPrice:'--')+'</span></div>'+
+      '<div class="trow"><span style="color:#fbbf24">+50% Take 25%</span><span style="color:#fbbf24">'+(h.avgCost?'$'+t1.toFixed(2):'--')+'</span></div>'+
+      '<div class="trow"><span style="color:#4ade80">+100% Take 25%</span><span style="color:#4ade80">'+(h.avgCost?'$'+t2.toFixed(2):'--')+'</span></div>'+
+      '<div class="trow"><span style="color:#38bdf8">+200% Ride 50%</span><span style="color:#38bdf8">'+(h.avgCost?'$'+t3.toFixed(2):'--')+'</span></div>'+
+      '<div class="prog-track"><div style="width:'+Math.max(0,prog).toFixed(0)+'%;height:100%;background:'+h.color+';border-radius:2px"></div></div>'+
+      '<div style="font-size:8px;color:#4a5568;margin-top:4px;text-align:right">'+Math.max(0,prog).toFixed(0)+'% to first target</div>'+
+    '</div>';
+  });
+  html+='</div>';
+  document.getElementById('panel-targets').innerHTML=html;
+}
+
+function renderSettings(){
+  var etf=holdings.filter(function(h){return h.type==='ETF';}).reduce(function(s,h){return s+h.alloc;},0);
+  var stk=holdings.filter(function(h){return h.type==='Stock';}).reduce(function(s,h){return s+h.alloc;},0);
+  var weighted=calcWeightedReturn();
+  var html='<div class="settings-card">'+
+    '<div style="color:#38bdf8;font-size:9px;letter-spacing:.15em;margin-bottom:12px">PORTFOLIO CONFIGURATION</div>'+
+    '<div class="srow"><span style="color:#4a5568">Platform</span><span>Superhero AU</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Stock Currency</span><span style="color:#38bdf8">USD</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Crypto Currency</span><span style="color:#a78bfa">AUD</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Weekly DCA</span><span style="color:#fbbf24">AUD $500</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Horizon</span><span style="color:#4ade80">5 Years</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Risk Profile</span><span>High</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">ETF Allocation</span><span style="color:#fbbf24">'+etf+'%</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Stock Allocation</span><span style="color:#38bdf8">'+stk+'%</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Wtd Avg 5yr Return</span><span style="color:#4ade80">+'+(weighted*100).toFixed(0)+'% (Base Case)</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Load Up Signal</span><span style="color:#4ade80">Down 15%+</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Watch Signal</span><span style="color:#fbbf24">Up 30%+</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Take Profit</span><span style="color:#f87171">Up 50%+</span></div>'+
+  '</div>'+
+  '<div class="settings-card">'+
+    '<div style="color:#4ade80;font-size:9px;letter-spacing:.15em;margin-bottom:12px">PORTFOLIO THESIS LAYERS</div>'+
+    '<div class="srow"><span style="color:#4a5568">AI Chips</span><span style="color:#f97316">AVGO + MSFT</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">AI Memory</span><span style="color:#818cf8">MU</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">AI Photonics</span><span style="color:#67e8f9">LITE</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">AI Power</span><span style="color:#22d3ee">VST</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">AI Data Centres</span><span style="color:#34d399">CORZ</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Cybersecurity</span><span style="color:#a78bfa">CRWD</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Robotics</span><span style="color:#4ade80">TSLA</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Quantum</span><span style="color:#e879f9">IONQ</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Gaming</span><span style="color:#f472b6">TTWO</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Broad Market</span><span style="color:#fbbf24">QQQM</span></div>'+
+    '<div class="srow"><span style="color:#4a5568">Commodity</span><span style="color:#f59e0b">COPX</span></div>'+
+  '</div>'+
+  '<div class="danger-note">Not financial advice. Always consult a licensed financial adviser before investing. Projections based on analyst research forecasts — actual returns may vary significantly.</div>';
+  document.getElementById('panel-settings').innerHTML=html;
+}
+
+function toggleEdit(id){
+  if(editId===id){
+    var ac=parseFloat(document.getElementById('ec-'+id).value)||0;
+    var u=parseFloat(document.getElementById('eu-'+id).value)||0;
+    var lp=parseFloat(document.getElementById('ep-'+id).value)||0;
+    holdings=holdings.map(function(h){return h.id===id?Object.assign({},h,{avgCost:ac,units:u,lastPrice:lp}):h;});
+    editId=null;
+  } else {editId=id;}
+  renderStats();
+  renderHoldings();
+  renderSignals();
+  renderTargets();
+  buildProjChart(currentScenario);
+}
+
+// Init
+renderStats();
+renderTabs();
+renderHoldings();
+renderDCA();
+renderSignals();
+renderCrypto();
+renderTargets();
+renderSettings();
+buildProjChart('base');
+</script>
+</body>
+</html>
