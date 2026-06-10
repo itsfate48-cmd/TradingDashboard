@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Budget · Sydney → Amman · Egypt · Greece 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#04060a;color:#f0f6ff;font-family:monospace;font-size:12px;padding:0;min-height:100vh}
+.header{padding:20px 20px 0;border-bottom:1px solid rgba(56,189,248,.08);background:linear-gradient(180deg,#060912 0%,#04060a 100%)}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.eyebrow{color:#38bdf8;font-size:9px;letter-spacing:.2em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.title{font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,#fff 30%,#38bdf8 70%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:10px;color:#4a5568;margin-top:4px}
+.trip-meta{font-size:9px;color:#4a5568;text-align:right;margin-top:4px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;padding:16px 20px}
+.stat-card{background:#080c14;border:1px solid rgba(56,189,248,.1);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent)}
+.stat-lbl{font-size:9px;color:#4a5568;letter-spacing:.15em;margin-bottom:6px;text-transform:uppercase}
+.stat-val{font-weight:700;font-size:1rem;color:var(--accent)}
+.stat-sub{font-size:10px;color:#94a3b8;margin-top:4px}
+.stat-range{font-size:9px;color:#4a5568;margin-top:3px}
+.prog-track{height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:2px;transition:width .6s ease}
+.chart-section{padding:0 20px 16px}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.chart-title{font-size:10px;color:#4a5568;letter-spacing:.15em;text-transform:uppercase}
+.chart-wrap{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:10px;padding:16px}
+.tabs-wrap{padding:0 20px}
+.tabs{display:flex;gap:0;background:#060810;border-bottom:1px solid rgba(56,189,248,.08);padding:12px 0 0;overflow-x:auto}
+.tab{background:transparent;border:none;border-bottom:2px solid transparent;padding:8px 14px;color:#4a5568;cursor:pointer;font-size:9px;letter-spacing:.1em;font-family:monospace;transition:all .2s;margin-bottom:-1px;white-space:nowrap}
+.tab.on{color:#38bdf8;border-bottom-color:#38bdf8}
+.tab:hover{color:#94a3b8}
+.panel{display:none;padding:16px 20px}
+.panel.on{display:block}
+.expense-card{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:8px;padding:10px;margin-bottom:6px;padding-left:14px;position:relative}
+.e-border{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.e-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.e-name{font-weight:700;font-size:.9rem}
+.e-detail{font-size:9px;color:#4a5568;margin-bottom:6px;line-height:1.5}
+.e-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.e-cell-lbl{font-size:8px;color:#4a5568}
+.e-cell-val{font-size:11px;font-weight:600}
+.section-lbl{font-size:9px;color:#4a5568;letter-spacing:.15em;margin-bottom:10px;text-transform:uppercase}
+.sum-card{background:#080c14;border:1px solid rgba(56,189,248,.1);border-radius:8px;padding:12px;margin-bottom:8px}
+.sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.sum-row:last-child{border-bottom:none}
+.sum-total{display:flex;justify-content:space-between;padding:10px 0 0;font-size:13px;font-weight:700;margin-top:4px;border-top:1px solid rgba(56,189,248,.15)}
+.pie-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.pie-canvas-wrap{position:relative;width:100%;max-width:260px;margin:0 auto}
+.pie-legend{display:flex;flex-direction:column;gap:5px}
+.pie-leg-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.pie-leg-item:last-child{border-bottom:none}
+.pie-leg-left{display:flex;align-items:center;gap:6px}
+.pie-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.itin-day{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;gap:12px;align-items:flex-start}
+.itin-date{min-width:52px;text-align:center;padding-top:2px}
+.itin-day-num{font-size:1.1rem;font-weight:800;line-height:1}
+.itin-month{font-size:8px;color:#4a5568;letter-spacing:.1em}
+.itin-content{flex:1}
+.itin-loc{font-weight:700;font-size:.9rem}
+.itin-desc{font-size:10px;color:#4a5568;margin-top:2px;line-height:1.5}
+.itin-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.itin-tag{font-size:8px;padding:2px 7px;border-radius:10px;background:rgba(56,189,248,.08);color:#38bdf8}
+.pay-item{background:#080c14;border:1px solid rgba(56,189,248,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid transparent}
+.pay-name{font-weight:700;font-size:.85rem}
+.pay-detail{font-size:9px;color:#4a5568;margin-top:2px}
+.pay-amount{font-weight:700;font-size:.9rem}
+.paid-btn{border-radius:5px;padding:3px 9px;cursor:pointer;font-size:8px;font-family:monospace;transition:all .2s;font-weight:700;border:1px solid}
+.paid-btn.is-paid{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);color:#4ade80}
+.paid-btn.is-unpaid{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.2);color:#f87171}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.note{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:8px;padding:10px;font-size:10px;color:rgba(251,191,36,.7);line-height:1.7;margin-top:8px}
+.region-hdr{font-size:10px;letter-spacing:.1em;margin:12px 0 6px;font-weight:700}
+@media(max-width:700px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .e-grid{grid-template-columns:1fr 1fr}
+  .pie-layout{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+  .header-top{flex-direction:column;gap:6px}
+  .trip-meta{text-align:left}
+}
+@media(max-width:420px){
+  .stats-row{grid-template-columns:1fr}
+  .title{font-size:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="eyebrow"><span class="live-dot"></span> TRAVEL BUDGET &middot; COUPLE &middot; 2 PAX</div>
+      <div class="title">SYDNEY &rarr; AMMAN &middot; EGYPT &middot; GREECE</div>
+      <div class="subtitle">Istanbul &middot; Amman &middot; Petra &middot; Cairo &middot; Santorini &middot; Paros &middot; Naxos &middot; Crete &middot; <span style="color:#38bdf8">25 Days</span> &middot; <span style="color:#a78bfa">3 Regions</span></div>
+    </div>
+    <div class="trip-meta">
+      <div style="color:#f0f6ff;font-size:11px;font-weight:700">AUG 1 &ndash; 25, 2026</div>
+      <div>2 Travellers</div>
+      <div style="margin-top:2px;color:#38bdf8">All prices USD</div>
+    </div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card" style="--accent:#38bdf8">
+    <div class="stat-lbl">Total Budget (USD)</div>
+    <div class="stat-val" id="totalMid">--</div>
+    <div class="stat-sub" id="totalRange">--</div>
+    <div class="stat-range">Mid estimate &middot; couple</div>
+  </div>
+  <div class="stat-card" style="--accent:#a78bfa">
+    <div class="stat-lbl">Per Person (USD)</div>
+    <div class="stat-val" id="perPerson">--</div>
+    <div class="stat-sub" id="perRange">--</div>
+    <div class="stat-range">Mid estimate</div>
+  </div>
+  <div class="stat-card" style="--accent:#4ade80">
+    <div class="stat-lbl">Budget Range</div>
+    <div class="stat-val" id="rangeMin">--</div>
+    <div class="stat-sub" id="rangeMax">--</div>
+    <div class="stat-range">Budget &rarr; comfortable</div>
+  </div>
+  <div class="stat-card" style="--accent:#fbbf24">
+    <div class="stat-lbl">Payment Progress</div>
+    <div class="stat-val" id="paidAmt">$0 paid</div>
+    <div class="prog-track"><div class="prog-fill" id="payBar" style="width:0%;background:#fbbf24"></div></div>
+    <div class="stat-range" id="payPct">0% of budget secured</div>
+  </div>
+</div>
+
+<div class="chart-section">
+  <div class="chart-header">
+    <div class="chart-title">Cost Breakdown &mdash; All Categories (USD &middot; Couple &middot; Mid Estimate)</div>
+  </div>
+  <div class="chart-wrap">
+    <div class="pie-layout">
+      <div class="pie-canvas-wrap"><canvas id="breakdownChart" style="max-height:280px"></canvas></div>
+      <div class="pie-legend" id="breakdownLegend"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs" id="tabs"></div>
+</div>
+<div id="panel-overview"      class="panel on"></div>
+<div id="panel-flights"       class="panel"></div>
+<div id="panel-accommodation" class="panel"></div>
+<div id="panel-food"          class="panel"></div>
+<div id="panel-activities"    class="panel"></div>
+<div id="panel-itinerary"     class="panel"></div>
+<div id="panel-payments"      class="panel"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+var FLIGHTS = [
+  {id:'f1', name:'Sydney → Istanbul',    date:'Aug 1, 2026',     perPerson:1200, pax:2, color:'#38bdf8', note:'SYD → IST ~22hr flight, arrive Aug 2'},
+  {id:'f2', name:'Istanbul → Amman',     date:'Aug 3, 2026',     perPerson:120,  pax:2, color:'#a78bfa', note:'Turkish Airlines / Royal Jordanian'},
+  {id:'f3', name:'Cairo → Santorini',    date:'~Aug 20, 2026',   perPerson:150,  pax:2, color:'#4ade80', note:'Via Athens or direct charter'},
+];
+
+var FERRIES = [
+  {id:'fe1', name:'Santorini → Paros', date:'~Aug 22', costPp:35, pax:2, color:'#22d3ee'},
+  {id:'fe2', name:'Paros → Naxos',     date:'~Aug 23', costPp:30, pax:2, color:'#67e8f9'},
+  {id:'fe3', name:'Naxos → Crete',     date:'~Aug 24', costPp:40, pax:2, color:'#38bdf8'},
+];
+
+var ACCOMMODATION = [
+  {id:'a1', name:'Istanbul',    region:'Middle East', type:'Budget Hotel',  nights:2,  minPn:40, maxPn:60,  color:'#a78bfa', dates:'Aug 1–3'},
+  {id:'a2', name:'Amman',       region:'Middle East', type:'Budget Hotel',  nights:4,  minPn:40, maxPn:60,  color:'#f97316', dates:'Aug 3–7'},
+  {id:'a3', name:'Petra',       region:'Middle East', type:'Budget Hotel',  nights:1,  minPn:40, maxPn:60,  color:'#fbbf24', dates:'~Aug 7'},
+  {id:'a4', name:'Cairo',       region:'Middle East', type:'Budget Hotel',  nights:11, minPn:40, maxPn:60,  color:'#f87171', dates:'Aug 8–19'},
+  {id:'a5', name:'Santorini',   region:'Greece',      type:'Airbnb',        nights:2,  minPn:80, maxPn:120, color:'#4ade80', dates:'Aug 20–22'},
+  {id:'a6', name:'Paros',       region:'Greece',      type:'Airbnb',        nights:1,  minPn:80, maxPn:120, color:'#22d3ee', dates:'Aug 22–23'},
+  {id:'a7', name:'Naxos',       region:'Greece',      type:'Airbnb',        nights:1,  minPn:80, maxPn:120, color:'#818cf8', dates:'Aug 23–24'},
+  {id:'a8', name:'Crete',       region:'Greece',      type:'Airbnb',        nights:1,  minPn:80, maxPn:120, color:'#38bdf8', dates:'Aug 24–25'},
+];
+
+var FOOD = [
+  {region:'Istanbul',       days:2,  minPp:60, maxPp:80,  color:'#a78bfa'},
+  {region:'Amman + Petra',  days:5,  minPp:60, maxPp:80,  color:'#f97316'},
+  {region:'Cairo',          days:11, minPp:60, maxPp:80,  color:'#f87171'},
+  {region:'Santorini',      days:2,  minPp:70, maxPp:100, color:'#4ade80'},
+  {region:'Paros',          days:1,  minPp:70, maxPp:100, color:'#22d3ee'},
+  {region:'Naxos',          days:1,  minPp:70, maxPp:100, color:'#818cf8'},
+  {region:'Crete',          days:2,  minPp:70, maxPp:100, color:'#38bdf8'},
+];
+
+var ACTIVITIES = [
+  {id:'ac1', name:'Amman City Tour',            location:'Amman, Jordan',    minPp:30, maxPp:50,  pax:2, color:'#f97316', note:'Citadel, Roman Theatre, Old Town food trail'},
+  {id:'ac2', name:'Petra Entry + Guided Tour',  location:'Petra, Jordan',    minPp:40, maxPp:60,  pax:2, color:'#fbbf24', note:'Treasury, Monastery, Siq canyon walk'},
+  {id:'ac3', name:'Dead Sea Day Trip',           location:'Jordan',           minPp:30, maxPp:50,  pax:2, color:'#22d3ee', note:'Float + mud bath, resort entry'},
+  {id:'ac4', name:'Pyramids of Giza + Sphinx',  location:'Cairo, Egypt',     minPp:30, maxPp:50,  pax:2, color:'#f87171', note:'Giza Plateau entry, camel ride optional'},
+  {id:'ac5', name:'Egyptian Museum',            location:'Cairo, Egypt',     minPp:20, maxPp:35,  pax:2, color:'#a78bfa', note:'Tutankhamun collection, mummies'},
+  {id:'ac6', name:'Luxor Day Trip',             location:'Upper Egypt',      minPp:60, maxPp:100, pax:2, color:'#f59e0b', note:'Valley of Kings, Karnak Temple'},
+  {id:'ac7', name:'Khan el-Khalili Food Tour',  location:'Cairo, Egypt',     minPp:25, maxPp:40,  pax:2, color:'#38bdf8', note:'Bazaar wander + street food experience'},
+  {id:'ac8', name:'Santorini Caldera Cruise',   location:'Santorini, Greece',minPp:35, maxPp:60,  pax:2, color:'#4ade80', note:'Sunset sail + volcanic hot springs'},
+  {id:'ac9', name:'Island Beach + Snorkel',     location:'Paros / Naxos',    minPp:20, maxPp:35,  pax:2, color:'#67e8f9', note:'Gear rental + snorkel entry fees'},
+];
+
+var ITINERARY = [
+  {day:'Aug 1',    loc:'Sydney → Istanbul',   desc:'Depart SYD evening. Long-haul flight ~22 hrs, arriving Istanbul Aug 2.',                   tags:['Flight','Transit'],          color:'#38bdf8'},
+  {day:'Aug 2',    loc:'Istanbul, Turkey',          desc:'Arrive IST, hotel check-in. Explore Sultanahmet, Blue Mosque, Hagia Sophia area.',          tags:['Arrival','Explore'],         color:'#a78bfa'},
+  {day:'Aug 3',    loc:'Istanbul → Amman',     desc:'Morning: Grand Bazaar, Galata Tower. Afternoon flight to Amman. Check in.',                  tags:['Sightseeing','Flight'],      color:'#a78bfa'},
+  {day:'Aug 4–5',loc:'Amman, Jordan',          desc:'Amman Citadel, Roman Theatre, Rainbow Street food tour, Abdali district.',                   tags:['Culture','Food'],            color:'#f97316'},
+  {day:'Aug 6',    loc:'Petra, Jordan',             desc:'Day trip to Petra (3 hr drive). The Treasury, The Monastery, Siq canyon. Overnight in Petra.',tags:['UNESCO','Day Trip'],        color:'#fbbf24'},
+  {day:'Aug 7',    loc:'Dead Sea → Cairo',     desc:'Morning float at the Dead Sea. Afternoon head to Queen Alia Airport. Fly or bus to Cairo.',   tags:['Activity','Transit'],        color:'#22d3ee'},
+  {day:'Aug 8',    loc:'Cairo, Egypt',              desc:'Arrive Cairo. Check in near Old Cairo or Zamalek. Rest and acclimatise.',                     tags:['Arrival'],                   color:'#f87171'},
+  {day:'Aug 9–10',loc:'Pyramids of Giza',      desc:'Giza Plateau: Great Pyramid, Pyramid of Khafre, Great Sphinx. Saqqara step pyramid nearby.',  tags:['UNESCO','Activity'],        color:'#f87171'},
+  {day:'Aug 11–12',loc:'Cairo Museums',        desc:'Grand Egyptian Museum, National Museum of Egyptian Civilization. Tutankhamun treasures.',      tags:['Museum','Culture'],         color:'#a78bfa'},
+  {day:'Aug 13–14',loc:'Islamic Cairo',        desc:'Khan el-Khalili bazaar, Al-Azhar mosque, Muizz Street, Coptic Cairo churches.',               tags:['Culture','Food'],            color:'#f97316'},
+  {day:'Aug 15–16',loc:'Luxor Day Trip',       desc:'Early train or flight to Luxor. Valley of Kings, Karnak Temple, Hatshepsut Temple.',          tags:['UNESCO','Day Trip'],         color:'#f59e0b'},
+  {day:'Aug 17–19',loc:'Cairo Flex Days',      desc:'Dahshur pyramids, Memphis open-air museum. Nile felucca, final Cairo dinners.',               tags:['Explore','Rest'],            color:'#4a5568'},
+  {day:'Aug 20',   loc:'Cairo → Santorini',    desc:'Depart Cairo, fly to Santorini via Athens. Arrive afternoon, check in Fira or Oia.',          tags:['Flight','Arrival'],          color:'#4ade80'},
+  {day:'Aug 20–22',loc:'Santorini, Greece',    desc:'Oia sunset, caldera views, volcanic beach, sunset catamaran cruise.',                         tags:['Romance','Beach'],           color:'#4ade80'},
+  {day:'Aug 22',   loc:'Santorini → Paros',    desc:'Morning ferry to Paros. Explore Parikia old town and Naoussa fishing village.',               tags:['Ferry','Island Hop'],        color:'#22d3ee'},
+  {day:'Aug 23',   loc:'Paros → Naxos',        desc:'Short ferry to Naxos. Portara gate, mountain villages, long sandy beaches.',                  tags:['Ferry','Island Hop'],        color:'#818cf8'},
+  {day:'Aug 24',   loc:'Naxos → Crete',        desc:'Ferry to Crete. Chania Old Town, Venetian harbour, scenic drives.',                           tags:['Ferry','Arrive Crete'],      color:'#38bdf8'},
+  {day:'Aug 25',   loc:'Crete → Sydney',       desc:'Depart Heraklion or Chania. Connect via Athens for long-haul home to Sydney.',                tags:['Flight','Return Home'],      color:'#f87171'},
+];
+
+var PAYMENTS = [
+  {id:'p1',  name:'Sydney → Istanbul Flights',  amount:2400, category:'Flights',       color:'#38bdf8', paid:false},
+  {id:'p2',  name:'Istanbul → Amman Flights',   amount:240,  category:'Flights',       color:'#a78bfa', paid:false},
+  {id:'p3',  name:'Cairo → Santorini Flights',  amount:300,  category:'Flights',       color:'#4ade80', paid:false},
+  {id:'p4',  name:'Greek Island Ferries (3)',         amount:210,  category:'Ferries',       color:'#22d3ee', paid:false},
+  {id:'p5',  name:'Istanbul Hotel (2 nights)',        amount:100,  category:'Accommodation', color:'#a78bfa', paid:false},
+  {id:'p6',  name:'Amman Hotel (4 nights)',           amount:200,  category:'Accommodation', color:'#f97316', paid:false},
+  {id:'p7',  name:'Petra Hotel (1 night)',            amount:50,   category:'Accommodation', color:'#fbbf24', paid:false},
+  {id:'p8',  name:'Cairo Hotel (11 nights)',          amount:550,  category:'Accommodation', color:'#f87171', paid:false},
+  {id:'p9',  name:'Santorini Airbnb (2 nights)',      amount:200,  category:'Accommodation', color:'#4ade80', paid:false},
+  {id:'p10', name:'Paros Airbnb (1 night)',           amount:100,  category:'Accommodation', color:'#22d3ee', paid:false},
+  {id:'p11', name:'Naxos Airbnb (1 night)',           amount:100,  category:'Accommodation', color:'#818cf8', paid:false},
+  {id:'p12', name:'Crete Airbnb (1 night)',           amount:100,  category:'Accommodation', color:'#38bdf8', paid:false},
+  {id:'p13', name:'Petra Entry + Tour',               amount:100,  category:'Activities',    color:'#fbbf24', paid:false},
+  {id:'p14', name:'Pyramids + Cairo Activities',      amount:200,  category:'Activities',    color:'#f87171', paid:false},
+];
+
+var TABS_LIST   = ['Overview','Flights','Accommodation','Food & Drink','Activities','Itinerary','Payments'];
+var PANELS_LIST = ['overview','flights','accommodation','food','activities','itinerary','payments'];
+var donutChart  = null;
+
+// ── CALCULATIONS ──────────────────────────────────────────────────────────────
+
+function midVal(min, max){ return (min + max) / 2; }
+
+function calcTransport(){
+  var f = FLIGHTS.reduce(function(s,x){ return s + x.perPerson * x.pax; }, 0);
+  var r = FERRIES.reduce(function(s,x){ return s + x.costPp * x.pax; }, 0);
+  return f + r;
+}
+
+function calcAccom(t){
+  return ACCOMMODATION.reduce(function(s,a){
+    var pn = t==='min' ? a.minPn : t==='max' ? a.maxPn : midVal(a.minPn, a.maxPn);
+    return s + a.nights * pn;
+  }, 0);
+}
+
+function calcFood(t){
+  return FOOD.reduce(function(s,f){
+    var pp = t==='min' ? f.minPp : t==='max' ? f.maxPp : midVal(f.minPp, f.maxPp);
+    return s + f.days * pp * 2;
+  }, 0);
+}
+
+function calcActivities(t){
+  return ACTIVITIES.reduce(function(s,a){
+    var pp = t==='min' ? a.minPp : t==='max' ? a.maxPp : midVal(a.minPp, a.maxPp);
+    return s + pp * a.pax;
+  }, 0);
+}
+
+function calcTotal(t){
+  var tr = calcTransport();
+  var ac = calcAccom(t);
+  var fd = calcFood(t);
+  var av = calcActivities(t);
+  return { transport:tr, accom:ac, food:fd, acts:av, total:tr+ac+fd+av };
+}
+
+function fmtUSD(n){ return '$' + Math.round(n).toLocaleString(); }
+
+function paidTotal(){
+  return PAYMENTS.filter(function(p){ return p.paid; }).reduce(function(s,p){ return s + p.amount; }, 0);
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+
+function renderStats(){
+  var mid  = calcTotal('mid');
+  var minT = calcTotal('min');
+  var maxT = calcTotal('max');
+  var paid = paidTotal();
+  var pct  = mid.total > 0 ? Math.min(100, (paid / mid.total * 100)) : 0;
+
+  document.getElementById('totalMid').textContent   = fmtUSD(mid.total);
+  document.getElementById('totalRange').textContent  = fmtUSD(minT.total) + ' – ' + fmtUSD(maxT.total);
+  document.getElementById('perPerson').textContent   = fmtUSD(mid.total / 2);
+  document.getElementById('perRange').textContent    = fmtUSD(minT.total / 2) + ' – ' + fmtUSD(maxT.total / 2);
+  document.getElementById('rangeMin').textContent    = 'Min: ' + fmtUSD(minT.total);
+  document.getElementById('rangeMax').textContent    = 'Max: ' + fmtUSD(maxT.total);
+  document.getElementById('paidAmt').textContent     = fmtUSD(paid) + ' paid';
+  document.getElementById('payBar').style.width      = pct.toFixed(0) + '%';
+  document.getElementById('payPct').textContent      = pct.toFixed(0) + '% of budget secured';
+}
+
+// ── DONUT CHART ───────────────────────────────────────────────────────────────
+
+function buildDonut(){
+  var mid    = calcTotal('mid');
+  var cats   = ['Flights & Ferries','Accommodation','Food & Drink','Activities & Tours'];
+  var vals   = [mid.transport, mid.accom, mid.food, mid.acts];
+  var colors = ['#38bdf8','#f97316','#4ade80','#fbbf24'];
+  var el     = document.getElementById('breakdownChart');
+  if (!el) return;
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(el.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: cats,
+      datasets: [{
+        data: vals,
+        backgroundColor: colors.map(function(c){ return c + 'bb'; }),
+        borderColor: colors,
+        borderWidth: 1,
+        hoverOffset: 20
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true, cutout:'58%',
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:'#0d1420', borderColor:'rgba(56,189,248,.2)', borderWidth:1,
+          titleColor:'#f0f6ff', bodyColor:'#94a3b8', padding:10,
+          callbacks: {
+            label: function(c){
+              var pct = ((c.parsed / mid.total) * 100).toFixed(1);
+              return ' ' + fmtUSD(c.parsed) + ' (' + pct + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
+
+  var html = '';
+  cats.forEach(function(cat, i){
+    var pct = ((vals[i] / mid.total) * 100).toFixed(0);
+    html += '<div class="pie-leg-item">' +
+      '<div class="pie-leg-left"><div class="pie-leg-dot" style="background:' + colors[i] + '"></div>' +
+      '<span style="font-weight:700;font-size:11px">' + cat + '</span></div>' +
+      '<div style="text-align:right">' +
+        '<div style="color:' + colors[i] + ';font-weight:700">' + fmtUSD(vals[i]) + '</div>' +
+        '<div style="color:#4a5568;font-size:9px">' + pct + '% of total</div>' +
+      '</div></div>';
+  });
+  document.getElementById('breakdownLegend').innerHTML = html;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = TABS_LIST.map(function(t, i){
+    var active = document.getElementById('panel-' + PANELS_LIST[i]).classList.contains('on');
+    return '<button class="tab' + (active ? ' on' : '') + '" onclick="switchTab(\'' + PANELS_LIST[i] + '\')">' + t.toUpperCase() + '</button>';
+  }).join('');
+}
+
+function switchTab(name){
+  PANELS_LIST.forEach(function(p){ document.getElementById('panel-' + p).classList.remove('on'); });
+  document.getElementById('panel-' + name).classList.add('on');
+  renderTabs();
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+
+function renderOverview(){
+  var mid  = calcTotal('mid');
+  var minT = calcTotal('min');
+  var maxT = calcTotal('max');
+  var cats = [
+    { label:'Flights & Ferries', icon:'✈', mid:mid.transport, min:mid.transport,        max:mid.transport,        color:'#38bdf8' },
+    { label:'Accommodation',     icon:'\u{1F3E8}', mid:mid.accom,  min:calcAccom('min'),     max:calcAccom('max'),     color:'#f97316' },
+    { label:'Food & Drink',      icon:'\u{1F374}', mid:mid.food,   min:calcFood('min'),      max:calcFood('max'),      color:'#4ade80' },
+    { label:'Activities & Tours',icon:'\u{1F5FA}', mid:mid.acts,   min:calcActivities('min'),max:calcActivities('max'),color:'#fbbf24' },
+  ];
+
+  var html = '<div class="section-lbl">COST SUMMARY &mdash; ALL FIGURES IN USD (COUPLE)</div>';
+  html += '<div class="sum-card">';
+  cats.forEach(function(c){
+    var pct = ((c.mid / mid.total) * 100).toFixed(0);
+    html += '<div class="sum-row">' +
+      '<span><span style="margin-right:6px">' + c.icon + '</span><span style="color:' + c.color + '">' + c.label + '</span></span>' +
+      '<div style="text-align:right">' +
+        '<div style="color:' + c.color + ';font-weight:700">' + fmtUSD(c.mid) + '</div>' +
+        '<div style="color:#4a5568;font-size:9px">' + fmtUSD(c.min) + ' – ' + fmtUSD(c.max) + ' &middot; ' + pct + '%</div>' +
+      '</div></div>';
+  });
+  html += '<div class="sum-total"><span style="letter-spacing:.1em;color:#4a5568">TOTAL (MID ESTIMATE)</span>' +
+    '<div style="text-align:right">' +
+      '<div style="color:#38bdf8;font-size:1.1rem">' + fmtUSD(mid.total) + '</div>' +
+      '<div style="font-size:9px;color:#4a5568">Range: ' + fmtUSD(minT.total) + ' – ' + fmtUSD(maxT.total) + '</div>' +
+    '</div></div>';
+  html += '</div>';
+
+  var totalNights = ACCOMMODATION.reduce(function(s,a){ return s + a.nights; }, 0);
+  html += '<div class="two-col">';
+  html += '<div class="sum-card"><div style="color:#a78bfa;font-size:9px;letter-spacing:.15em;margin-bottom:10px">PER PERSON (MID)</div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Flights + Ferries</span><span style="color:#38bdf8">' + fmtUSD(mid.transport/2) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Accommodation</span><span style="color:#f97316">' + fmtUSD(mid.accom/2) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Food & Drink</span><span style="color:#4ade80">' + fmtUSD(mid.food/2) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Activities</span><span style="color:#fbbf24">' + fmtUSD(mid.acts/2) + '</span></div>' +
+    '<div class="sum-total"><span style="color:#a78bfa;letter-spacing:.1em">TOTAL / PERSON</span><span style="color:#a78bfa;font-size:1rem">' + fmtUSD(mid.total/2) + '</span></div>' +
+    '</div>';
+  html += '<div class="sum-card"><div style="color:#4ade80;font-size:9px;letter-spacing:.15em;margin-bottom:10px">TRIP FACTS</div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Duration</span><span>25 days</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Total Nights</span><span>' + totalNights + ' nights</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Destinations</span><span style="color:#38bdf8">8 cities</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Middle East</span><span style="color:#f97316">~18 days</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Greek Islands</span><span style="color:#4ade80">~7 days</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Flights</span><span>3 flights</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Island Ferries</span><span>3 ferries</span></div>' +
+    '</div>';
+  html += '</div>';
+  html += '<div class="note">All estimates in USD. Mid estimate used for totals. Middle East budget hotels $40–$60/night. Greece Airbnb $80–$120/night. Food: Middle East $60–$80/person/day, Greece $70–$100/person/day. Activities $30–$50/person. Flights are point estimates based on typical fares — book early for best rates.</div>';
+  document.getElementById('panel-overview').innerHTML = html;
+}
+
+// ── FLIGHTS ───────────────────────────────────────────────────────────────────
+
+function renderFlights(){
+  var html = '<div class="section-lbl">FLIGHTS &mdash; USD &middot; 2 PASSENGERS</div>';
+  FLIGHTS.forEach(function(f){
+    var total = f.perPerson * f.pax;
+    html += '<div class="expense-card">' +
+      '<div class="e-border" style="background:' + f.color + '"></div>' +
+      '<div class="e-top"><span class="e-name">✈ ' + f.name + '</span>' +
+        '<span style="color:' + f.color + ';font-weight:700;font-size:.9rem">' + fmtUSD(total) + '</span></div>' +
+      '<div class="e-detail">' + f.date + ' &middot; ' + f.note + '</div>' +
+      '<div class="e-grid">' +
+        '<div><div class="e-cell-lbl">PER PERSON</div><div class="e-cell-val" style="color:' + f.color + '">' + fmtUSD(f.perPerson) + '</div></div>' +
+        '<div><div class="e-cell-lbl">PASSENGERS</div><div class="e-cell-val">' + f.pax + '</div></div>' +
+        '<div><div class="e-cell-lbl">TOTAL</div><div class="e-cell-val">' + fmtUSD(total) + '</div></div>' +
+        '<div><div class="e-cell-lbl">TYPE</div><div class="e-cell-val" style="font-size:9px;color:#94a3b8">International</div></div>' +
+      '</div></div>';
+  });
+
+  html += '<div class="region-hdr" style="color:#22d3ee">⛴ GREEK ISLAND FERRIES &mdash; USD &middot; 2 PASSENGERS</div>';
+  var ferryTotal = 0;
+  FERRIES.forEach(function(f){
+    var total = f.costPp * f.pax;
+    ferryTotal += total;
+    html += '<div class="expense-card">' +
+      '<div class="e-border" style="background:' + f.color + '"></div>' +
+      '<div class="e-top"><span class="e-name">' + f.name + '</span>' +
+        '<span style="color:' + f.color + ';font-weight:700">' + fmtUSD(total) + '</span></div>' +
+      '<div class="e-detail">' + f.date + '</div>' +
+      '<div class="e-grid">' +
+        '<div><div class="e-cell-lbl">PER PERSON</div><div class="e-cell-val" style="color:' + f.color + '">' + fmtUSD(f.costPp) + '</div></div>' +
+        '<div><div class="e-cell-lbl">PASSENGERS</div><div class="e-cell-val">' + f.pax + '</div></div>' +
+        '<div><div class="e-cell-lbl">TOTAL</div><div class="e-cell-val">' + fmtUSD(total) + '</div></div>' +
+        '<div><div class="e-cell-lbl">TYPE</div><div class="e-cell-val" style="font-size:9px;color:#94a3b8">Ferry</div></div>' +
+      '</div></div>';
+  });
+
+  var flightTotal = FLIGHTS.reduce(function(s,f){ return s + f.perPerson * f.pax; }, 0);
+  html += '<div class="sum-card" style="margin-top:12px">' +
+    '<div class="sum-row"><span style="color:#4a5568">Flights subtotal</span><span style="color:#38bdf8">' + fmtUSD(flightTotal) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Ferries subtotal</span><span style="color:#22d3ee">' + fmtUSD(ferryTotal) + '</span></div>' +
+    '<div class="sum-total"><span style="color:#4a5568;letter-spacing:.1em">TRANSPORT TOTAL</span><span style="color:#38bdf8">' + fmtUSD(flightTotal + ferryTotal) + '</span></div>' +
+    '</div>';
+  document.getElementById('panel-flights').innerHTML = html;
+}
+
+// ── ACCOMMODATION ─────────────────────────────────────────────────────────────
+
+function renderAccommodation(){
+  var html = '<div class="section-lbl">ACCOMMODATION &mdash; USD PER NIGHT (ROOM FOR 2)</div>';
+  var meTotal = 0, grTotal = 0;
+  var meHtml = '<div class="region-hdr" style="color:#f97316">MIDDLE EAST &mdash; BUDGET HOTELS $40–$60/NIGHT</div>';
+  var grHtml = '<div class="region-hdr" style="color:#4ade80">GREECE &mdash; AIRBNB MID-RANGE $80–$120/NIGHT</div>';
+
+  ACCOMMODATION.forEach(function(a){
+    var mid = midVal(a.minPn, a.maxPn);
+    var midTotal = mid * a.nights;
+    var card = '<div class="expense-card">' +
+      '<div class="e-border" style="background:' + a.color + '"></div>' +
+      '<div class="e-top"><span class="e-name">' + a.name + '</span>' +
+        '<span style="color:' + a.color + ';font-weight:700">' + fmtUSD(a.minPn * a.nights) + ' – ' + fmtUSD(a.maxPn * a.nights) + '</span></div>' +
+      '<div class="e-detail">' + a.dates + ' &middot; ' + a.nights + ' night' + (a.nights>1?'s':'') + ' &middot; ' + a.type + '</div>' +
+      '<div class="e-grid">' +
+        '<div><div class="e-cell-lbl">NIGHTS</div><div class="e-cell-val" style="color:' + a.color + '">' + a.nights + '</div></div>' +
+        '<div><div class="e-cell-lbl">MIN/NIGHT</div><div class="e-cell-val">' + fmtUSD(a.minPn) + '</div></div>' +
+        '<div><div class="e-cell-lbl">MAX/NIGHT</div><div class="e-cell-val">' + fmtUSD(a.maxPn) + '</div></div>' +
+        '<div><div class="e-cell-lbl">MID TOTAL</div><div class="e-cell-val">' + fmtUSD(midTotal) + '</div></div>' +
+      '</div></div>';
+    if(a.region === 'Middle East'){ meHtml += card; meTotal += midTotal; }
+    else { grHtml += card; grTotal += midTotal; }
+  });
+
+  html += meHtml + grHtml;
+  var totalNights = ACCOMMODATION.reduce(function(s,a){ return s + a.nights; }, 0);
+  html += '<div class="sum-card" style="margin-top:12px">' +
+    '<div class="sum-row"><span style="color:#4a5568">Middle East subtotal</span><span style="color:#f97316">' + fmtUSD(meTotal) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Greece subtotal</span><span style="color:#4ade80">' + fmtUSD(grTotal) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Total nights</span><span>' + totalNights + '</span></div>' +
+    '<div class="sum-total"><span style="color:#4a5568;letter-spacing:.1em">ACCOMMODATION TOTAL (MID)</span><span style="color:#38bdf8">' + fmtUSD(meTotal + grTotal) + '</span></div>' +
+    '</div>';
+  document.getElementById('panel-accommodation').innerHTML = html;
+}
+
+// ── FOOD ──────────────────────────────────────────────────────────────────────
+
+function renderFood(){
+  var html = '<div class="section-lbl">FOOD & DRINK &mdash; USD PER PERSON PER DAY</div>';
+  var total = 0;
+  FOOD.forEach(function(f){
+    var mid      = midVal(f.minPp, f.maxPp) * 2 * f.days;
+    var minTotal = f.minPp * 2 * f.days;
+    var maxTotal = f.maxPp * 2 * f.days;
+    total += mid;
+    html += '<div class="expense-card">' +
+      '<div class="e-border" style="background:' + f.color + '"></div>' +
+      '<div class="e-top"><span class="e-name">' + f.region + '</span>' +
+        '<span style="color:' + f.color + ';font-weight:700">' + fmtUSD(minTotal) + ' – ' + fmtUSD(maxTotal) + '</span></div>' +
+      '<div class="e-detail">' + f.days + ' day' + (f.days>1?'s':'') + ' &middot; per person: $' + f.minPp + '–$' + f.maxPp + '/day &middot; couple total shown</div>' +
+      '<div class="e-grid">' +
+        '<div><div class="e-cell-lbl">DAYS</div><div class="e-cell-val" style="color:' + f.color + '">' + f.days + '</div></div>' +
+        '<div><div class="e-cell-lbl">PP / DAY</div><div class="e-cell-val">$' + f.minPp + '–$' + f.maxPp + '</div></div>' +
+        '<div><div class="e-cell-lbl">COUPLE / DAY</div><div class="e-cell-val">$' + (f.minPp*2) + '–$' + (f.maxPp*2) + '</div></div>' +
+        '<div><div class="e-cell-lbl">MID TOTAL</div><div class="e-cell-val">' + fmtUSD(mid) + '</div></div>' +
+      '</div></div>';
+  });
+
+  html += '<div class="sum-card" style="margin-top:12px">' +
+    '<div class="sum-row"><span style="color:#4a5568">Middle East (18 days)</span><span>$60–$80/pp/day</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Greece (7 days)</span><span>$70–$100/pp/day</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Budget range</span><span>' + fmtUSD(calcFood('min')) + ' – ' + fmtUSD(calcFood('max')) + '</span></div>' +
+    '<div class="sum-total"><span style="color:#4a5568;letter-spacing:.1em">FOOD TOTAL (MID)</span><span style="color:#4ade80">' + fmtUSD(total) + '</span></div>' +
+    '</div>' +
+    '<div class="note">Middle East food is very affordable. Cairo street food $3–$8/meal; sit-down $10–$25. Amman slightly pricier. Greece is ~30–40% more expensive, especially Santorini. Budget includes coffees, snacks, and occasional splurge dinners. Cooking via Airbnb kitchen saves $20–30/day on Greek islands.</div>';
+  document.getElementById('panel-food').innerHTML = html;
+}
+
+// ── ACTIVITIES ────────────────────────────────────────────────────────────────
+
+function renderActivities(){
+  var html  = '<div class="section-lbl">ACTIVITIES & TOURS &mdash; USD PER PERSON &middot; COUPLE TOTAL</div>';
+  var total = 0;
+  ACTIVITIES.forEach(function(a){
+    var mid      = midVal(a.minPp, a.maxPp) * a.pax;
+    var minTotal = a.minPp * a.pax;
+    var maxTotal = a.maxPp * a.pax;
+    total += mid;
+    html += '<div class="expense-card">' +
+      '<div class="e-border" style="background:' + a.color + '"></div>' +
+      '<div class="e-top"><span class="e-name">' + a.name + '</span>' +
+        '<span style="color:' + a.color + ';font-weight:700">' + fmtUSD(minTotal) + ' – ' + fmtUSD(maxTotal) + '</span></div>' +
+      '<div class="e-detail">' + a.location + ' &middot; ' + a.note + '</div>' +
+      '<div class="e-grid">' +
+        '<div><div class="e-cell-lbl">PP RANGE</div><div class="e-cell-val" style="color:' + a.color + '">$' + a.minPp + '–$' + a.maxPp + '</div></div>' +
+        '<div><div class="e-cell-lbl">PAX</div><div class="e-cell-val">' + a.pax + '</div></div>' +
+        '<div><div class="e-cell-lbl">COUPLE MIN</div><div class="e-cell-val">' + fmtUSD(minTotal) + '</div></div>' +
+        '<div><div class="e-cell-lbl">COUPLE MAX</div><div class="e-cell-val">' + fmtUSD(maxTotal) + '</div></div>' +
+      '</div></div>';
+  });
+
+  html += '<div class="sum-card" style="margin-top:12px">' +
+    '<div class="sum-row"><span style="color:#4a5568">Activities range</span><span>' + fmtUSD(calcActivities('min')) + ' – ' + fmtUSD(calcActivities('max')) + '</span></div>' +
+    '<div class="sum-total"><span style="color:#4a5568;letter-spacing:.1em">ACTIVITIES TOTAL (MID)</span><span style="color:#fbbf24">' + fmtUSD(total) + '</span></div>' +
+    '</div>' +
+    '<div class="note">Petra is a must-do — budget at least a full day. Luxor is best as an overnight or early flight. Book Santorini caldera cruises early (July–Aug fills fast). Pyramids entry is very affordable at ~$15 USD but a good guide is worth it. Mix paid tours with free wandering through souks and medinas.</div>';
+  document.getElementById('panel-activities').innerHTML = html;
+}
+
+// ── ITINERARY ─────────────────────────────────────────────────────────────────
+
+function renderItinerary(){
+  var html = '<div class="section-lbl">DAY-BY-DAY ITINERARY &mdash; AUG 1–25, 2026</div>';
+  ITINERARY.forEach(function(d){
+    var parts = d.day.split(' ');
+    var dayNum = parts.slice(1).join(' ') || parts[0];
+    var mon    = parts[0] === 'Aug' ? 'AUG' : parts[0].toUpperCase();
+    var tags   = d.tags.map(function(t){ return '<span class="itin-tag">' + t + '</span>'; }).join('');
+    html += '<div class="itin-day">' +
+      '<div class="itin-date">' +
+        '<div class="itin-day-num" style="color:' + d.color + '">' + dayNum + '</div>' +
+        '<div class="itin-month">' + mon + '</div>' +
+      '</div>' +
+      '<div class="itin-content">' +
+        '<div class="itin-loc" style="color:' + d.color + '">' + d.loc + '</div>' +
+        '<div class="itin-desc">' + d.desc + '</div>' +
+        '<div class="itin-tags">' + tags + '</div>' +
+      '</div></div>';
+  });
+  document.getElementById('panel-itinerary').innerHTML = html;
+}
+
+// ── PAYMENTS ──────────────────────────────────────────────────────────────────
+
+function togglePayment(id){
+  for (var i = 0; i < PAYMENTS.length; i++){
+    if (PAYMENTS[i].id === id){ PAYMENTS[i].paid = !PAYMENTS[i].paid; break; }
+  }
+  renderPayments();
+  renderStats();
+}
+
+function renderPayments(){
+  var paid      = paidTotal();
+  var mid       = calcTotal('mid').total;
+  var remaining = mid - paid;
+  var pct       = mid > 0 ? Math.min(100, (paid / mid * 100)) : 0;
+
+  var html = '<div class="section-lbl">PAYMENT TRACKER &mdash; TAP TO TOGGLE PAID / UNPAID</div>';
+  html += '<div class="sum-card" style="margin-bottom:12px">' +
+    '<div class="sum-row"><span style="color:#4a5568">Total budget (mid)</span><span style="color:#38bdf8;font-weight:700">' + fmtUSD(mid) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Paid so far</span><span style="color:#4ade80;font-weight:700">' + fmtUSD(paid) + '</span></div>' +
+    '<div class="sum-row"><span style="color:#4a5568">Still to pay</span><span style="color:#f87171;font-weight:700">' + fmtUSD(remaining) + '</span></div>' +
+    '<div style="margin-top:10px">' +
+      '<div style="display:flex;justify-content:space-between;font-size:9px;color:#4a5568;margin-bottom:5px"><span>Payment progress</span><span>' + pct.toFixed(0) + '%</span></div>' +
+      '<div class="prog-track" style="height:6px"><div class="prog-fill" style="width:' + pct.toFixed(0) + '%;background:linear-gradient(90deg,#4ade80,#38bdf8)"></div></div>' +
+    '</div></div>';
+
+  var cats = {};
+  PAYMENTS.forEach(function(p){ if (!cats[p.category]) cats[p.category] = []; cats[p.category].push(p); });
+  Object.keys(cats).forEach(function(cat){
+    html += '<div style="font-size:10px;color:#4a5568;letter-spacing:.1em;margin:10px 0 6px">' + cat.toUpperCase() + '</div>';
+    cats[cat].forEach(function(p){
+      var isPaid = p.paid;
+      html += '<div class="pay-item" style="border-left-color:' + (isPaid ? 'rgba(74,222,128,.4)' : 'rgba(248,113,113,.2)') + '">' +
+        '<div>' +
+          '<div class="pay-name" style="color:' + (isPaid ? '#4ade80' : p.color) + '">' + p.name + '</div>' +
+          '<div class="pay-detail">' + p.category + ' &middot; ' + fmtUSD(p.amount) + '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div class="pay-amount" style="color:' + (isPaid ? '#4ade80' : p.color) + '">' + fmtUSD(p.amount) + '</div>' +
+          '<button class="paid-btn ' + (isPaid ? 'is-paid' : 'is-unpaid') + '" style="margin-top:4px" onclick="togglePayment(\'' + p.id + '\')">' + (isPaid ? '✓ PAID' : 'UNPAID') + '</button>' +
+        '</div></div>';
+    });
+  });
+  document.getElementById('panel-payments').innerHTML = html;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+renderStats();
+renderTabs();
+renderOverview();
+renderFlights();
+renderAccommodation();
+renderFood();
+renderActivities();
+renderItinerary();
+renderPayments();
+setTimeout(buildDonut, 50);
+</script>
+</body>
+</html>
